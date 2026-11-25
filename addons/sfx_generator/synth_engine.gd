@@ -814,12 +814,15 @@ static func _render_hybrid(buf: PackedFloat32Array, p: Dictionary, sr: int, rng:
 		buf[n] = s * 0.7
 
 
-## Load a WAV file as mono float samples. Returns {"samples", "rate"} or
-## an empty dictionary if the file cannot be loaded.
+## Load WAV or Ogg Vorbis audio as mono float samples. Returns
+## {"samples", "rate"}, or an empty dictionary for unsupported/missing files.
 static func _load_sample_mono(path: String) -> Dictionary:
 	if path == "":
 		return {}
-	var stream: AudioStreamWAV = load(path) as AudioStreamWAV
+	var resource: Resource = load(path)
+	if resource is AudioStreamOggVorbis:
+		return _load_ogg_mono(resource as AudioStreamOggVorbis)
+	var stream: AudioStreamWAV = resource as AudioStreamWAV
 	if stream == null or stream.data.is_empty():
 		return {}
 	var channels: int = 2 if stream.stereo else 1
@@ -829,7 +832,9 @@ static func _load_sample_mono(path: String) -> Dictionary:
 	elif stream.format == AudioStreamWAV.FORMAT_8_BITS:
 		bytes_per_sample = 1
 	else:
-		return {} # ADPCM / QOA are not directly supported by the sample renderer.
+		# Godot may import PCM WAV sources as ADPCM or QOA. Decode those via
+		# the built-in playback path rather than treating compressed bytes as PCM.
+		return _load_playback_mono(stream)
 	var frames: int = int(stream.data.size() / (bytes_per_sample * channels))
 	if frames <= 0:
 		return {}
@@ -854,6 +859,39 @@ static func _load_sample_mono(path: String) -> Dictionary:
 				acc += (float(stream.data[i * channels + ch]) - 128.0) / 128.0
 			out[i] = acc / float(channels)
 	return {"samples": out, "rate": stream.mix_rate}
+
+
+## Decode Ogg through Godot's built-in playback decoder. mix_audio outputs at
+## AudioServer's mix rate, which is returned for the resampler in _render_sample.
+static func _load_ogg_mono(stream: AudioStreamOggVorbis) -> Dictionary:
+	return _load_playback_mono(stream)
+
+
+## Decode compressed or otherwise unsupported audio via Godot's playback API.
+## mix_audio outputs at AudioServer's mix rate, returned for resampling.
+static func _load_playback_mono(stream: AudioStream) -> Dictionary:
+	var rate: int = int(AudioServer.get_mix_rate())
+	if rate <= 0:
+		rate = SAMPLE_RATE
+	var length: float = stream.get_length()
+	if length <= 0.0:
+		return {}
+	# The synth caps output to 30 seconds; don't decode more source frames than
+	# can be used in a single render.
+	var frames: int = clampi(int(ceil(length * float(rate))), 1, rate * 30)
+	var playback: AudioStreamPlayback = stream.instantiate_playback()
+	if playback == null:
+		return {}
+	playback.start(0.0)
+	var decoded: PackedVector2Array = playback.mix_audio(1.0, frames)
+	playback.stop()
+	if decoded.is_empty():
+		return {}
+	var mono := PackedFloat32Array()
+	mono.resize(decoded.size())
+	for i in decoded.size():
+		mono[i] = (decoded[i].x + decoded[i].y) * 0.5
+	return {"samples": mono, "rate": rate}
 
 
 static func _render_sample(buf: PackedFloat32Array, p: Dictionary, sr: int, _rng: RandomNumberGenerator) -> void:

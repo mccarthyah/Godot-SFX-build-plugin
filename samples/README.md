@@ -8,8 +8,8 @@ with thanks. The source license text is included as [`LICENSE-CC0.txt`](LICENSE-
 Use these as raw material in the SFX Generator: choose **Mode → Sample**,
 select a recording, and alter it with pitch shift, looping, reversing, the
 ADSR envelope, and the full effects chain. The dock scans this directory
-recursively, so additional WAV files placed in `res://samples/` appear in the
-sample list after Godot imports them and the dock is reloaded.
+recursively, so additional WAV or OGG files placed in `res://samples/` appear
+in the sample list after Godot imports them and the dock is reloaded.
 
 All bundled files are 48 kHz, 16-bit PCM WAVs. The source library contains
 320 effects and is available from the repository linked above.

@@ -107,6 +107,24 @@ func _init() -> void:
 	else:
 		print("OK sample-missing handled")
 
+	# Ogg Vorbis is decoded through AudioStreamOggVorbis playback.
+	var ogg_params: Dictionary = SFXSynthEngine.default_params()
+	ogg_params["mode"] = "sample"
+	ogg_params["sample_path"] = "res://tests/fixtures/ogg/cc0_laser.ogg"
+	ogg_params["duration"] = 0.25
+	ogg_params["stereo"] = false
+	ogg_params["normalize"] = false
+	ogg_params["amp_sustain"] = 1.0
+	var ogg_samples: PackedFloat32Array = SFXSynthEngine.generate_samples(ogg_params)
+	var ogg_peak: float = 0.0
+	for sample in ogg_samples:
+		ogg_peak = maxf(ogg_peak, absf(sample))
+	if ogg_samples.size() != int(0.25 * 44100) or ogg_peak < 0.01:
+		failures += 1
+		print("FAIL Ogg sample decode size=", ogg_samples.size(), " peak=", ogg_peak)
+	else:
+		print("OK Ogg sample decode peak=", ogg_peak)
+
 	# 7. Dock + player scripts load.
 	var dock_script: GDScript = load("res://addons/sfx_generator/sfx_dock.gd")
 	if dock_script == null:

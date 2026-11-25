@@ -311,7 +311,18 @@ def _load_sample_mono(path):
             width = w.getsampwidth()
             rate = w.getframerate()
             raw = w.readframes(n)
-    except (wave.Error, FileNotFoundError, OSError):
+    except wave.Error:
+        # Ogg Vorbis decoding is optional in the Python mirror; the Godot
+        # plugin itself decodes Ogg natively without extra dependencies.
+        try:
+            import soundfile as sf
+            decoded, rate = sf.read(str(path), dtype="float32", always_2d=True)
+        except (ImportError, OSError, RuntimeError, ValueError):
+            return None, 0
+        if decoded.size == 0:
+            return None, 0
+        return decoded.mean(axis=1), int(rate)
+    except (FileNotFoundError, OSError):
         return None, 0
     if width == 1:
         data = (np.frombuffer(raw, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0

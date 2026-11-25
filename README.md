@@ -24,14 +24,14 @@ effects chain, so sounds have body, texture and movement:
 | **Granular** | Cloud of windowed grains with pitch spread | Magic sparkles, shimmer, textures |
 | **Formant** | Sawtooth through 3 vocal-tract resonators (F1/F2/F3) | Robot voices, creatures, birds, owls |
 | **Hybrid** | FM body + brown-noise breath + sub thump | Heavy impacts, thuds, punches |
-| **Sample** | Load a WAV, resample/pitch-shift, reverse or loop it | Altered foley, booms, whooshes and risers |
+| **Sample** | Load WAV or OGG, resample/pitch-shift, reverse or loop it | Altered foley, booms, whooshes and risers |
 
 The bundled sample picker scans `res://samples/` recursively. It now includes
 all 320 sounds from the **CC0 1.0** [wyzowl/sfx-kit](https://github.com/wyzowl/sfx-kit)
 library, converted to 48 kHz, 16-bit PCM. Choose **Sample** as the source
 mode, select a recording, then use pitch, reverse/loop, envelope, filtering
-and the same effects chain as the synth engines. Add your own WAV files under
-`res://samples/` to make them available in the picker. See
+and the same effects chain as the synth engines. Add your own WAV or OGG
+files under `res://samples/` to make them available in the picker. See
 [`samples/README.md`](samples/README.md) for the full inventory and
 [`samples/LICENSE-CC0.txt`](samples/LICENSE-CC0.txt) for the sample license.
 
@@ -118,7 +118,7 @@ startup. See `SFXSynthEngine.default_params()` for the full parameter list.
 The DSP is mirrored in NumPy so you can audition and test sounds anywhere:
 
 ```bash
-pip install numpy
+pip install numpy soundfile  # soundfile is optional; enables OGG in Python tools
 python3 tools/generate_examples.py   # regenerate examples/*.wav
 python3 -m unittest tools.test_synth -v  # run DSP unit tests
 ```

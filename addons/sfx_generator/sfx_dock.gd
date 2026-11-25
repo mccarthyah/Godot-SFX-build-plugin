@@ -371,7 +371,7 @@ func _collect_wavs(dir_path: String) -> void:
 			var full: String = dir_path + "/" + fname
 			if dir.current_is_dir():
 				_collect_wavs(full)
-			elif fname.ends_with(".wav"):
+			elif fname.to_lower().ends_with(".wav") or fname.to_lower().ends_with(".ogg"):
 				_sample_paths.append(full)
 		fname = dir.get_next()
 	dir.list_dir_end()

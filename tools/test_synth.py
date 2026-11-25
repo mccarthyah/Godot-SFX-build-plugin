@@ -127,6 +127,21 @@ class TestSynth(unittest.TestCase):
         silent = generate_samples({**p, "sample_path": "nope.wav"})
         self.assertTrue(np.allclose(silent, 0.0))
 
+    def test_ogg_sample_mode(self):
+        try:
+            import soundfile  # noqa: F401
+        except ImportError:
+            self.skipTest("Install soundfile to test Ogg decoding in the Python mirror")
+        ogg = str(Path(__file__).resolve().parents[1]
+                  / "tests/fixtures/ogg/cc0_laser.ogg")
+        p = default_params()
+        p.update({"mode": "sample", "sample_path": ogg, "duration": 0.25,
+                  "stereo": False, "normalize": False, "amp_sustain": 1.0})
+        out = generate_samples(p)
+        self.assertEqual(len(out), int(0.25 * SAMPLE_RATE))
+        self.assertTrue(np.all(np.isfinite(out)))
+        self.assertGreater(np.max(np.abs(out)), 0.01, "Ogg sample should decode audibly")
+
     def test_fm_produces_sidebands(self):
         # FM with high index should have energy away from the carrier.
         p = default_params()
