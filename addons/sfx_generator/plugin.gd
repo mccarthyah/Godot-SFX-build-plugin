@@ -1,3 +1,4 @@
+@tool
 extends EditorPlugin
 ## SFX Generator — procedural sound-effect synthesizer for Godot 4.
 ##

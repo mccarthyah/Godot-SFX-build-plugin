@@ -1,3 +1,4 @@
+@tool
 extends Control
 ## SFX Generator editor dock: preset browser, live preview, parameter
 ## editing, randomization and WAV export.
