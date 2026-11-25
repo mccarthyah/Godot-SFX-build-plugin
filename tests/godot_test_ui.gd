@@ -39,6 +39,36 @@ func _init() -> void:
 			print("FAIL sample picker omitted a community audio collection")
 		else:
 			print("OK sample picker includes all three community collections")
+
+		dock._sample_source_option.select(2) # Adbertiser SFX
+		dock._on_sample_source_selected(2)
+		if dock._visible_sample_paths.size() != 408:
+			failures += 1
+			print("FAIL Adbertiser filter count: ", dock._visible_sample_paths.size())
+		else:
+			print("OK library filter narrows to 408 Adbertiser samples")
+		dock._sample_search.text = "alert"
+		dock._on_sample_search_changed("alert")
+		if dock._visible_sample_paths.size() != 12:
+			failures += 1
+			print("FAIL sample search count: ", dock._visible_sample_paths.size())
+		else:
+			print("OK sample search narrows results by name or folder")
+		dock._sample_search.text = ""
+		dock._on_sample_search_changed("")
+		dock._sample_source_option.select(0)
+		dock._on_sample_source_selected(0)
+		dock._sample_sort_option.select(1)
+		dock._on_sample_sort_selected(1)
+		var first_name: String = String(dock._visible_sample_paths[0]).get_file().to_lower()
+		var last_name: String = String(dock._visible_sample_paths[-1]).get_file().to_lower()
+		if first_name > last_name:
+			failures += 1
+			print("FAIL sample name sort order")
+		else:
+			print("OK samples sort A–Z by filename")
+		dock._sample_sort_option.select(0)
+		dock._on_sample_sort_selected(0)
 		dock._on_sample_selected(0)
 		if dock._params.get("mode") != "sample" or String(dock._params.get("sample_path", "")) == "":
 			failures += 1

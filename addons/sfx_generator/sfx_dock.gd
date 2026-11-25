@@ -10,6 +10,13 @@ const WAVE_NAMES: Array = ["Sine", "Saw", "Square", "Triangle", "Pulse", "Noise"
 const NOISE_NAMES: Array = ["White", "Pink", "Brown"]
 const FILTER_NAMES: Array = ["None", "Lowpass", "Highpass", "Bandpass", "Notch"]
 const DISTORT_NAMES: Array = ["Tanh", "Hard clip", "Foldback"]
+const SAMPLE_SOURCE_PREFIXES: Dictionary = {
+	2: "community/adbertiser-sfx/",
+	3: "community/chip-sounds/",
+	4: "community/meta-open-sound/meta-nylon-guitar/",
+	5: "community/meta-open-sound/meta-piano/",
+	6: "community/meta-open-sound/meta-steel-guitar/",
+}
 
 var _params: Dictionary = {}
 var _player: AudioStreamPlayer = null
@@ -28,7 +35,11 @@ var _status_label: Label = null
 var _preset_names: Array = []
 var _current_preset: String = ""
 var _sample_option: OptionButton = null
+var _sample_search: LineEdit = null
+var _sample_source_option: OptionButton = null
+var _sample_sort_option: OptionButton = null
 var _sample_paths: Array = []
+var _visible_sample_paths: Array = []
 var _loop_check: CheckBox = null
 var _reverse_check: CheckBox = null
 
@@ -165,6 +176,32 @@ func _build_ui() -> void:
 
 	root.add_child(HSeparator.new())
 	root.add_child(_section_label("Sample (mode: sample)"))
+	_sample_search = LineEdit.new()
+	_sample_search.placeholder_text = "Search sample names or folders…"
+	_sample_search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sample_search.text_changed.connect(_on_sample_search_changed)
+	root.add_child(_sample_search)
+
+	var sample_filter_row := HBoxContainer.new()
+	root.add_child(sample_filter_row)
+	_sample_source_option = OptionButton.new()
+	_sample_source_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sample_source_option.add_item("All libraries", 0)
+	_sample_source_option.add_item("Wyzowl SFX Kit", 1)
+	_sample_source_option.add_item("Adbertiser SFX", 2)
+	_sample_source_option.add_item("Chip Sounds", 3)
+	_sample_source_option.add_item("Meta Nylon Guitar", 4)
+	_sample_source_option.add_item("Meta Piano", 5)
+	_sample_source_option.add_item("Meta Steel Guitar", 6)
+	_sample_source_option.item_selected.connect(_on_sample_source_selected)
+	sample_filter_row.add_child(_sample_source_option)
+	_sample_sort_option = OptionButton.new()
+	_sample_sort_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sample_sort_option.add_item("Folder order", 0)
+	_sample_sort_option.add_item("Name A–Z", 1)
+	_sample_sort_option.item_selected.connect(_on_sample_sort_selected)
+	sample_filter_row.add_child(_sample_sort_option)
+
 	_sample_option = OptionButton.new()
 	_sample_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_sample_option.item_selected.connect(_on_sample_selected)
@@ -269,7 +306,9 @@ func _make_option(parent: Container, label_text: String, items: Array, key: Stri
 	return opt
 
 
-func _add_slider(parent: Container, label_text: String, key: String, min_v: float, max_v: float, step: float) -> void:
+func _add_slider(
+	parent: Container, label_text: String, key: String, min_v: float, max_v: float, step: float
+) -> void:
 	var row := HBoxContainer.new()
 	parent.add_child(row)
 	var lab := Label.new()
@@ -306,7 +345,7 @@ func _refresh_ui() -> void:
 	_set_option(_filter_option, int(_params.get("filter_type", 1)))
 	_set_option(_distort_option, int(_params.get("distortion_type", 0)))
 	_seed_spin.set_value_no_signal(float(_params.get("seed", 12345)))
-	var sidx: int = _sample_paths.find(String(_params.get("sample_path", "")))
+	var sidx: int = _visible_sample_paths.find(String(_params.get("sample_path", "")))
 	if sidx >= 0:
 		_sample_option.select(sidx)
 	_loop_check.set_pressed_no_signal(bool(_params.get("sample_loop", false)))
@@ -335,8 +374,8 @@ func _on_option_selected(index: int, key: String) -> void:
 	if key == "mode":
 		_params["mode"] = MODES[index]
 		if MODES[index] == "sample":
-			if String(_params.get("sample_path", "")) == "" and not _sample_paths.is_empty():
-				_params["sample_path"] = String(_sample_paths[0])
+			if String(_params.get("sample_path", "")) == "" and not _visible_sample_paths.is_empty():
+				_params["sample_path"] = String(_visible_sample_paths[0])
 				_sample_option.select(0)
 	else:
 		_params[key] = index
@@ -349,18 +388,13 @@ func _on_seed_changed(value: float) -> void:
 
 
 func _scan_samples() -> void:
-	_sample_option.clear()
 	_sample_paths.clear()
-	_collect_wavs("res://samples")
+	_collect_samples("res://samples")
 	_sample_paths.sort()
-	if _sample_paths.is_empty():
-		_sample_option.add_item("(no samples in res://samples/)")
-	else:
-		for p in _sample_paths:
-			_sample_option.add_item(String(p).replace("res://samples/", ""))
+	_refresh_sample_options()
 
 
-func _collect_wavs(dir_path: String) -> void:
+func _collect_samples(dir_path: String) -> void:
 	var dir := DirAccess.open(dir_path)
 	if dir == null:
 		return
@@ -370,20 +404,81 @@ func _collect_wavs(dir_path: String) -> void:
 		if fname != "." and fname != "..":
 			var full: String = dir_path + "/" + fname
 			if dir.current_is_dir():
-				_collect_wavs(full)
+				_collect_samples(full)
 			elif fname.to_lower().ends_with(".wav") or fname.to_lower().ends_with(".ogg"):
 				_sample_paths.append(full)
 		fname = dir.get_next()
 	dir.list_dir_end()
 
 
+func _refresh_sample_options() -> void:
+	if _sample_option == null:
+		return
+	var search: String = _sample_search.text.strip_edges().to_lower()
+	var source_id: int = _sample_source_option.get_selected_id()
+	_visible_sample_paths.clear()
+	for sample_path in _sample_paths:
+		var path: String = String(sample_path)
+		var relative_path: String = path.replace("res://samples/", "")
+		if not _sample_matches_source(relative_path, source_id):
+			continue
+		if search != "" and not relative_path.to_lower().contains(search):
+			continue
+		_visible_sample_paths.append(path)
+	if _sample_sort_option.get_selected_id() == 1:
+		_visible_sample_paths.sort_custom(_sort_samples_by_name)
+	else:
+		_visible_sample_paths.sort()
+
+	_sample_option.clear()
+	_sample_option.select(-1)
+	if _visible_sample_paths.is_empty():
+		_sample_option.add_item("(no samples match)")
+		return
+	for path in _visible_sample_paths:
+		_sample_option.add_item(String(path).replace("res://samples/", ""))
+	_sample_option.select(-1)
+	var current_index: int = _visible_sample_paths.find(String(_params.get("sample_path", "")))
+	if current_index >= 0:
+		_sample_option.select(current_index)
+
+
+func _sample_matches_source(relative_path: String, source_id: int) -> bool:
+	if source_id == 1:
+		return not relative_path.begins_with("community/")
+	if SAMPLE_SOURCE_PREFIXES.has(source_id):
+		return relative_path.begins_with(String(SAMPLE_SOURCE_PREFIXES[source_id]))
+	return true
+
+
+func _sort_samples_by_name(a: String, b: String) -> bool:
+	var a_name: String = a.get_file().to_lower()
+	var b_name: String = b.get_file().to_lower()
+	if a_name == b_name:
+		return a.to_lower() < b.to_lower()
+	return a_name < b_name
+
+
+func _on_sample_search_changed(_text: String) -> void:
+	_refresh_sample_options()
+
+
+func _on_sample_source_selected(_index: int) -> void:
+	_refresh_sample_options()
+
+
+func _on_sample_sort_selected(_index: int) -> void:
+	_refresh_sample_options()
+
+
 func _on_sample_selected(index: int) -> void:
-	if index >= 0 and index < _sample_paths.size():
-		_params["sample_path"] = String(_sample_paths[index])
+	if index >= 0 and index < _visible_sample_paths.size():
+		var sample_path: String = String(_visible_sample_paths[index])
+		_params["sample_path"] = sample_path
 		_params["mode"] = "sample"
 		_set_option(_mode_option, MODES.find("sample"))
 		_current_preset = ""
-		_status_label.text = "Sample: %s" % String(_sample_paths[index]).replace("res://samples/", "")
+		_status_label.text = "Sample: %s" % sample_path.replace("res://samples/", "")
 
 
 func _on_loop_toggled(pressed: bool) -> void:

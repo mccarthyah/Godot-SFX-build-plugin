@@ -9,7 +9,9 @@ Use these as raw material in the SFX Generator: choose **Mode → Sample**,
 select a recording, and alter it with pitch shift, looping, reversing, the
 ADSR envelope, and the full effects chain. The dock scans this directory
 recursively, so additional WAV or OGG files placed in `res://samples/` appear
-in the sample list after Godot imports them and the dock is reloaded.
+in the sample list after Godot imports them and the dock is reloaded. In the
+sample section, search by filename or folder, filter by source library, and
+choose folder or filename A–Z ordering.
 
 The 320 files in this original Wyzowl collection are 48 kHz, 16-bit PCM WAVs.
 Additional CC0 effects and instrument samples, including OGG files, are listed
