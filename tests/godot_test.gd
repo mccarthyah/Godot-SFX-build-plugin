@@ -70,8 +70,11 @@ func _init() -> void:
 		print("OK generate_stream bytes=", stream.data.size())
 
 	# 5. Determinism (same seed -> identical samples).
-	var a: PackedFloat32Array = SFXSynthEngine.generate_samples({"mode": "noise", "noise_amount": 1.0, "duration": 0.2, "seed": 7, "stereo": false})
-	var b: PackedFloat32Array = SFXSynthEngine.generate_samples({"mode": "noise", "noise_amount": 1.0, "duration": 0.2, "seed": 7, "stereo": false})
+	var noise_params := {
+		"mode": "noise", "noise_amount": 1.0, "duration": 0.2, "seed": 7, "stereo": false
+	}
+	var a: PackedFloat32Array = SFXSynthEngine.generate_samples(noise_params)
+	var b: PackedFloat32Array = SFXSynthEngine.generate_samples(noise_params)
 	if a != b:
 		failures += 1
 		print("FAIL determinism")
@@ -123,7 +126,31 @@ func _init() -> void:
 		failures += 1
 		print("FAIL Ogg sample decode size=", ogg_samples.size(), " peak=", ogg_peak)
 	else:
-		print("OK Ogg sample decode peak=", ogg_peak)
+		print("OK Ogg fixture decode peak=", ogg_peak)
+
+	# Verify real library OGGs from each bundled source through sample rendering.
+	var library_ogg_paths := [
+		"res://samples/community/adbertiser-sfx/alert/alarm_beep_1.ogg",
+		"res://samples/community/chip-sounds/alien_1.ogg",
+		"res://samples/community/meta-open-sound/meta-piano/INSPiano_Vel01_A0_01.ogg",
+	]
+	for library_ogg_path in library_ogg_paths:
+		var library_params: Dictionary = SFXSynthEngine.default_params()
+		library_params["mode"] = "sample"
+		library_params["sample_path"] = library_ogg_path
+		library_params["duration"] = 0.25
+		library_params["stereo"] = false
+		library_params["normalize"] = false
+		library_params["amp_sustain"] = 1.0
+		var library_samples: PackedFloat32Array = SFXSynthEngine.generate_samples(library_params)
+		var library_peak: float = 0.0
+		for sample in library_samples:
+			library_peak = maxf(library_peak, absf(sample))
+		if library_samples.size() != int(0.25 * 44100) or library_peak < 0.01:
+			failures += 1
+			print("FAIL library OGG decode ", library_ogg_path, " peak=", library_peak)
+		else:
+			print("OK library OGG decode ", library_ogg_path.get_file())
 
 	# 7. Dock + player scripts load.
 	var dock_script: GDScript = load("res://addons/sfx_generator/sfx_dock.gd")

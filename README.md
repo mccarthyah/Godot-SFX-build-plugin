@@ -26,14 +26,17 @@ effects chain, so sounds have body, texture and movement:
 | **Hybrid** | FM body + brown-noise breath + sub thump | Heavy impacts, thuds, punches |
 | **Sample** | Load WAV or OGG, resample/pitch-shift, reverse or loop it | Altered foley, booms, whooshes and risers |
 
-The bundled sample picker scans `res://samples/` recursively. It now includes
-all 320 sounds from the **CC0 1.0** [wyzowl/sfx-kit](https://github.com/wyzowl/sfx-kit)
-library, converted to 48 kHz, 16-bit PCM. Choose **Sample** as the source
-mode, select a recording, then use pitch, reverse/loop, envelope, filtering
-and the same effects chain as the synth engines. Add your own WAV or OGG
-files under `res://samples/` to make them available in the picker. See
-[`samples/README.md`](samples/README.md) for the full inventory and
-[`samples/LICENSE-CC0.txt`](samples/LICENSE-CC0.txt) for the sample license.
+The bundled sample picker scans `res://samples/` recursively and includes
+1,951 CC0 samples: 320 effects from [wyzowl/sfx-kit](https://github.com/wyzowl/sfx-kit),
+408 from [Adbertiser SFX](https://github.com/Reodelbasalan/adbertiser-sfx),
+148 from [Chip Sounds](https://github.com/subsoap/chip-sounds), and 1,075
+instrument samples from the CC0 collections in [Meta Open-Sound](https://github.com/facebookincubator/Meta-open-sound).
+Choose **Sample** as the source mode, select a recording, then use pitch,
+reverse/loop, envelope, filtering and the same effects chain as the synth
+engines. Add your own WAV or OGG files under `res://samples/` to make them
+available in the picker. See [`samples/README.md`](samples/README.md) and
+[`samples/community/README.md`](samples/community/README.md) for inventories,
+source links, and license details.
 
 **Effects chain** (all optional, all parameterizable): resonant biquad filter
 with sweep + envelope, distortion (tanh / hard clip / foldback), bitcrush,

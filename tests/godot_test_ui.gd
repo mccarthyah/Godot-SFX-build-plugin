@@ -22,11 +22,23 @@ func _init() -> void:
 		print("FAIL dock params empty")
 	else:
 		print("OK dock params mode=", dock._params["mode"])
-	if dock._sample_paths.size() != 320:
+	if dock._sample_paths.size() != 1951:
 		failures += 1
 		print("FAIL dock sample count: ", dock._sample_paths.size())
 	else:
-		print("OK dock found all 320 bundled samples")
+		print("OK dock found all 1951 bundled samples")
+		var has_adbertiser := false
+		var has_chip := false
+		var has_meta_ogg := false
+		for sample_path in dock._sample_paths:
+			has_adbertiser = has_adbertiser or "community/adbertiser-sfx/" in sample_path
+			has_chip = has_chip or "community/chip-sounds/" in sample_path
+			has_meta_ogg = has_meta_ogg or "community/meta-open-sound/" in sample_path
+		if not has_adbertiser or not has_chip or not has_meta_ogg:
+			failures += 1
+			print("FAIL sample picker omitted a community audio collection")
+		else:
+			print("OK sample picker includes all three community collections")
 		dock._on_sample_selected(0)
 		if dock._params.get("mode") != "sample" or String(dock._params.get("sample_path", "")) == "":
 			failures += 1
