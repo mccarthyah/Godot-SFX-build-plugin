@@ -5,7 +5,7 @@ SFX with FM bells, plucked strings, granular textures, formant voices and
 resonant explosions, or start from bundled CC0 recordings and reshape them.
 
 ![Synthesis modes](https://img.shields.io/badge/modes-8%20synth%20engines%20%2B%20samples-4cc2ff)
-![Presets](https://img.shields.io/badge/presets-42%20hand--tuned-ffd166)
+![Presets](https://img.shields.io/badge/presets-46%20hand--tuned-ffd166)
 ![Godot](https://img.shields.io/badge/Godot-4.x-478cbf)
 
 ## Why not just 8-bit beeps?
@@ -26,7 +26,7 @@ effects chain, so sounds have body, texture and movement:
 | **Hybrid** | FM body + brown-noise breath + sub thump | Heavy impacts, thuds, punches |
 | **Sample** | Load a WAV, resample/pitch-shift, reverse or loop it | Altered foley, booms, whooshes and risers |
 
-The bundled sample picker scans `res://samples/` recursively. Its 22 WAVs are
+The bundled sample picker scans `res://samples/` recursively. Its 76 WAVs are
 48 kHz, 16-bit PCM from the **CC0 1.0** [wyzowl/sfx-kit](https://github.com/wyzowl/sfx-kit)
 library. Choose **Sample** as the source mode, select a recording, then use
 pitch, reverse/loop, envelope, filtering and the same effects chain as the
@@ -61,7 +61,7 @@ envelope, stereo width. Plus pitch sweeps, vibrato, detune, and seed-based
 
 Exported WAVs are 16-bit / 44.1 kHz stereo and work in any engine.
 
-## Preset library (42 sounds)
+## Preset library (46 sounds)
 
 - **UI** — Soft UI Click, Glass UI Tick, Retro Coin (rich), Bubble Pop
 - **Sci-Fi** — Laser Zap, FM Bell, Electric Spark, Robot Voice, Alien Chirp,
@@ -76,7 +76,8 @@ Exported WAVs are 16-bit / 44.1 kHz stereo and work in any engine.
   Bell Toll
 - **Sample-based** — Sample Boom (deep), Sample Whoosh (reversed), Sample
   Impact (pitched), Sample Riser (looped), Sample Spring (bouncy), Sample
-  Shimmer (stretched)
+  Shimmer (stretched), Sample Digital Breach, Sample Cinematic Thunder,
+  Sample Notification Glow, Sample Transform Morph
 
 Listen to the curated procedural and sample-based renders in [`examples/`](examples/)
 without opening Godot.

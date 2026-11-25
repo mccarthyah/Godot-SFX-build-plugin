@@ -297,6 +297,35 @@ static func get_presets() -> Array:
 		"amp_attack": 0.05, "amp_decay": 0.6, "amp_release": 0.9,
 		"reverb_mix": 0.6, "reverb_decay": 4.0, "chorus": 0.4,
 	}))
+	list.append(_mk("Sample Digital Breach", "sci-fi", {
+		"mode": "sample", "sample_path": "res://samples/digital/digital-breach.wav",
+		"sample_pitch": -4.0, "duration": 1.5,
+		"amp_attack": 0.002, "amp_decay": 0.35, "amp_release": 0.7,
+		"filter_type": SFXSynthEngine.FILTER_HIGHPASS, "filter_freq": 380.0,
+		"bitcrush_bits": 9.0, "distortion": 0.2, "delay_mix": 0.15,
+		"reverb_mix": 0.3,
+	}))
+	list.append(_mk("Sample Cinematic Thunder", "impact", {
+		"mode": "sample", "sample_path": "res://samples/cinematic-hits/cinematic-thunder-massive.wav",
+		"sample_pitch": -7.0, "duration": 3.5,
+		"amp_attack": 0.003, "amp_decay": 1.0, "amp_sustain": 0.15,
+		"amp_release": 1.4, "filter_type": SFXSynthEngine.FILTER_LOWPASS,
+		"filter_freq": 4200.0, "reverb_mix": 0.35, "reverb_decay": 4.0,
+	}))
+	list.append(_mk("Sample Notification Glow", "ui", {
+		"mode": "sample", "sample_path": "res://samples/notifications/notification-success-chime.wav",
+		"sample_pitch": -2.0, "duration": 1.8,
+		"amp_attack": 0.002, "amp_decay": 0.4, "amp_release": 0.8,
+		"filter_type": SFXSynthEngine.FILTER_LOWPASS, "filter_freq": 7600.0,
+		"delay_mix": 0.18, "delay_time": 0.2, "reverb_mix": 0.45,
+	}))
+	list.append(_mk("Sample Transform Morph", "magic", {
+		"mode": "sample", "sample_path": "res://samples/shape-changes/transform-morph.wav",
+		"sample_reverse": true, "sample_pitch": -5.0, "duration": 2.5,
+		"amp_attack": 0.03, "amp_decay": 0.7, "amp_release": 1.0,
+		"filter_type": SFXSynthEngine.FILTER_BANDPASS, "filter_freq": 1600.0,
+		"filter_q": 1.5, "chorus": 0.25, "reverb_mix": 0.5,
+	}))
 	return list
 
 
