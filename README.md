@@ -1,18 +1,18 @@
 # Godot SFX Generator Plugin
 
-A procedural sound-effect synthesizer for **Godot 4** — generate rich, layered,
-non-8-bit SFX (FM bells, plucked strings, granular textures, formant voices,
-resonant explosions) directly in the editor. No audio samples needed.
+A sound-effect generator for **Godot 4** — create rich, layered, non-8-bit
+SFX with FM bells, plucked strings, granular textures, formant voices and
+resonant explosions, or start from bundled CC0 recordings and reshape them.
 
-![Synthesis modes](https://img.shields.io/badge/modes-8%20synth%20engines-4cc2ff)
-![Presets](https://img.shields.io/badge/presets-36%20hand--tuned-ffd166)
+![Synthesis modes](https://img.shields.io/badge/modes-8%20synth%20engines%20%2B%20samples-4cc2ff)
+![Presets](https://img.shields.io/badge/presets-42%20hand--tuned-ffd166)
 ![Godot](https://img.shields.io/badge/Godot-4.x-478cbf)
 
 ## Why not just 8-bit beeps?
 
 Classic "beep generators" use a single square wave with a pitch blip. This
-plugin layers **8 synthesis engines** with a full effects chain, so sounds
-have body, texture and movement:
+plugin layers **8 synthesis engines** and an audio-sample source with a full
+effects chain, so sounds have body, texture and movement:
 
 | Engine | What it does | Sounds like |
 |---|---|---|
@@ -24,6 +24,15 @@ have body, texture and movement:
 | **Granular** | Cloud of windowed grains with pitch spread | Magic sparkles, shimmer, textures |
 | **Formant** | Sawtooth through 3 vocal-tract resonators (F1/F2/F3) | Robot voices, creatures, birds, owls |
 | **Hybrid** | FM body + brown-noise breath + sub thump | Heavy impacts, thuds, punches |
+| **Sample** | Load a WAV, resample/pitch-shift, reverse or loop it | Altered foley, booms, whooshes and risers |
+
+The bundled sample picker scans `res://samples/` recursively. Its 22 WAVs are
+48 kHz, 16-bit PCM from the **CC0 1.0** [wyzowl/sfx-kit](https://github.com/wyzowl/sfx-kit)
+library. Choose **Sample** as the source mode, select a recording, then use
+pitch, reverse/loop, envelope, filtering and the same effects chain as the
+synth engines. Add your own WAV files under `res://samples/` to make them
+available in the picker. See [`samples/README.md`](samples/README.md) for
+attribution and the included sample list.
 
 **Effects chain** (all optional, all parameterizable): resonant biquad filter
 with sweep + envelope, distortion (tanh / hard clip / foldback), bitcrush,
@@ -33,8 +42,8 @@ envelope, stereo width. Plus pitch sweeps, vibrato, detune, and seed-based
 
 ## Installation
 
-1. Copy the `addons/` folder into your Godot project (or clone this repo and
-   copy `addons/sfx_generator/`).
+1. Copy both the `addons/` and `samples/` folders into your Godot project
+   (or clone this repo and copy `addons/sfx_generator/` plus `samples/`).
 2. In Godot: **Project → Project Settings → Plugins** → enable **SFX Generator**.
 3. Open the dock: **View → SFX Generator**.
 
@@ -52,7 +61,7 @@ envelope, stereo width. Plus pitch sweeps, vibrato, detune, and seed-based
 
 Exported WAVs are 16-bit / 44.1 kHz stereo and work in any engine.
 
-## Preset library (36 sounds)
+## Preset library (42 sounds)
 
 - **UI** — Soft UI Click, Glass UI Tick, Retro Coin (rich), Bubble Pop
 - **Sci-Fi** — Laser Zap, FM Bell, Electric Spark, Robot Voice, Alien Chirp,
@@ -65,8 +74,12 @@ Exported WAVs are 16-bit / 44.1 kHz stereo and work in any engine.
   Door Creak, Cave Drip
 - **Musical** — Plucked String, Warm Pad Stab, Bass Drop, Chiptune Arp (warm),
   Bell Toll
+- **Sample-based** — Sample Boom (deep), Sample Whoosh (reversed), Sample
+  Impact (pitched), Sample Riser (looped), Sample Spring (bouncy), Sample
+  Shimmer (stretched)
 
-Listen to 18 of them in [`examples/`](examples/) without opening Godot.
+Listen to the curated procedural and sample-based renders in [`examples/`](examples/)
+without opening Godot.
 
 ## Using sounds in code
 

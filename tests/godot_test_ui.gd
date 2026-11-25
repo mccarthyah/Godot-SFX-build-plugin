@@ -12,16 +12,34 @@ func _init() -> void:
 	root.add_child(dock)
 	await process_frame
 	await process_frame
-	if dock._preset_names.size() != 36:
+	if dock._preset_names.size() != 42:
 		failures += 1
 		print("FAIL dock preset count: ", dock._preset_names.size())
 	else:
-		print("OK dock loaded 36 presets, current=", dock._current_preset)
+		print("OK dock loaded 42 presets, current=", dock._current_preset)
 	if dock._params.is_empty():
 		failures += 1
 		print("FAIL dock params empty")
 	else:
 		print("OK dock params mode=", dock._params["mode"])
+	if dock._sample_paths.size() != 22:
+		failures += 1
+		print("FAIL dock sample count: ", dock._sample_paths.size())
+	else:
+		print("OK dock found 22 bundled samples")
+		dock._on_sample_selected(0)
+		if dock._params.get("mode") != "sample" or String(dock._params.get("sample_path", "")) == "":
+			failures += 1
+			print("FAIL sample selection did not activate sample mode")
+		else:
+			print("OK sample selection activates sample mode")
+		dock._on_loop_toggled(true)
+		dock._on_reverse_toggled(true)
+		if not bool(dock._params.get("sample_loop", false)) or not bool(dock._params.get("sample_reverse", false)):
+			failures += 1
+			print("FAIL sample loop/reverse controls")
+		else:
+			print("OK sample loop/reverse controls")
 
 	# 2. Dock preview path (generate stream from dock params).
 	var stream: AudioStreamWAV = SFXSynthEngine.generate_stream(dock._params)

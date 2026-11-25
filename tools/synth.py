@@ -32,6 +32,8 @@ def default_params():
         "grain_wave": WAVE_SINE, "grain_decay": 2.0,
         "formant1": 730.0, "formant2": 1090.0, "formant3": 2440.0,
         "formant_bw": 80.0, "formant_mix": 1.0,
+        "sample_path": "", "sample_pitch": 0.0, "sample_loop": False,
+        "sample_reverse": False,
         "filter_type": FILTER_LOWPASS, "filter_freq": 8000.0, "filter_freq_end": 0.0,
         "filter_q": 0.7, "filter_env": 0.0,
         "amp_attack": 0.005, "amp_decay": 0.1, "amp_sustain": 0.0, "amp_release": 0.15,
@@ -299,6 +301,62 @@ def _render_formant(p, sr, rng):
     return (1 - p["formant_mix"]) * src * 0.3 + p["formant_mix"] * out
 
 
+def _load_sample_mono(path):
+    """Load a WAV file as mono float samples. Returns (samples, rate) or (None, 0)."""
+    import wave
+    try:
+        with wave.open(str(path), "rb") as w:
+            n = w.getnframes()
+            ch = w.getnchannels()
+            width = w.getsampwidth()
+            rate = w.getframerate()
+            raw = w.readframes(n)
+    except (wave.Error, FileNotFoundError, OSError):
+        return None, 0
+    if width == 1:
+        data = (np.frombuffer(raw, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
+    elif width == 2:
+        data = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768.0
+    elif width == 3:
+        b = np.frombuffer(raw, dtype=np.uint8).reshape(-1, 3).astype(np.int32)
+        values = b[:, 0] | (b[:, 1] << 8) | (b[:, 2] << 16)
+        values = np.where(values & 0x800000, values - 0x1000000, values)
+        data = values.astype(np.float32) / 8388608.0
+    elif width == 4:
+        data = np.frombuffer(raw, dtype="<i4").astype(np.float32) / 2147483648.0
+    else:
+        return None, 0
+    if ch > 1:
+        data = data.reshape(-1, ch).mean(axis=1)
+    return data, rate
+
+
+def _render_sample(p, sr, rng):
+    n = int(p["duration"] * sr)
+    src, src_rate = _load_sample_mono(p["sample_path"])
+    if src is None or len(src) == 0:
+        return np.zeros(n)
+    if p["sample_reverse"]:
+        src = src[::-1].copy()
+    rate = 2.0 ** (p["sample_pitch"] / 12.0) * src_rate / sr
+    out = np.zeros(n)
+    for i in range(n):
+        pos = i * rate
+        idx = int(pos)
+        if p["sample_loop"]:
+            idx %= len(src)
+        elif idx >= len(src):
+            continue
+        frac = pos - idx
+        a = src[idx]
+        if p["sample_loop"]:
+            b = src[(idx + 1) % len(src)]
+        else:
+            b = src[idx + 1] if idx + 1 < len(src) else a
+        out[i] = a + (b - a) * frac
+    return out
+
+
 def _render_hybrid(p, sr, rng):
     n = int(p["duration"] * sr)
     t = np.arange(n) / sr
@@ -335,6 +393,7 @@ def generate_samples(params):
         "fm": _render_fm, "pluck": _render_pluck, "noise": _render_noise,
         "additive": _render_additive, "granular": _render_granular,
         "formant": _render_formant, "hybrid": _render_hybrid,
+        "sample": _render_sample,
     }
     mono = renderers.get(p["mode"], _render_osc)(p, sr, rng)
     buf = np.zeros(n_total)

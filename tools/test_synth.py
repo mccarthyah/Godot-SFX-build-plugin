@@ -20,7 +20,7 @@ from synth import (  # noqa: E402
     default_params, generate_samples,
 )
 
-MODES = ["osc", "fm", "pluck", "noise", "additive", "granular", "formant", "hybrid"]
+MODES = ["osc", "fm", "pluck", "noise", "additive", "granular", "formant", "hybrid", "sample"]
 
 
 class TestSynth(unittest.TestCase):
@@ -29,6 +29,9 @@ class TestSynth(unittest.TestCase):
             with self.subTest(mode=mode):
                 p = default_params()
                 p.update({"mode": mode, "duration": 0.3, "seed": 42, "stereo": False})
+                if mode == "sample":
+                    p["sample_path"] = str(Path(__file__).resolve().parent.parent
+                                            / "samples/booms-and-bass/boom-hit-soft.wav")
                 out = generate_samples(p)
                 self.assertGreater(len(out), 0)
                 self.assertTrue(np.all(np.isfinite(out)), f"{mode} has NaN/Inf")
@@ -101,6 +104,28 @@ class TestSynth(unittest.TestCase):
         early = np.max(np.abs(out[:int(0.05 * SAMPLE_RATE)]))
         late = np.max(np.abs(out[int(0.8 * SAMPLE_RATE):]))
         self.assertGreater(early, late, "pluck should decay over time")
+
+    def test_sample_mode(self):
+        sample = str(Path(__file__).resolve().parent.parent
+                     / "samples/booms-and-bass/boom-hit-soft.wav")
+        p = default_params()
+        p.update({"mode": "sample", "sample_path": sample, "duration": 1.0,
+                  "stereo": False})
+        out = generate_samples(p)
+        self.assertEqual(len(out), int(1.0 * SAMPLE_RATE))
+        self.assertGreater(np.max(np.abs(out)), 0.1, "sample should be audible")
+        # Pitch shift and reverse must change the output.
+        self.assertFalse(np.allclose(out, generate_samples({**p, "sample_pitch": -12.0})))
+        self.assertFalse(np.allclose(out, generate_samples({**p, "sample_reverse": True})))
+        # Looping fills the full duration even for short samples.
+        looped = generate_samples({**p, "sample_loop": True, "duration": 2.0,
+                                   "amp_sustain": 1.0, "amp_decay": 0.01,
+                                   "amp_release": 0.01})
+        self.assertEqual(len(looped), int(2.0 * SAMPLE_RATE))
+        self.assertGreater(np.max(np.abs(looped[int(1.5 * SAMPLE_RATE):])), 0.01)
+        # Missing sample renders silence without crashing.
+        silent = generate_samples({**p, "sample_path": "nope.wav"})
+        self.assertTrue(np.allclose(silent, 0.0))
 
     def test_fm_produces_sidebands(self):
         # FM with high index should have energy away from the carrier.

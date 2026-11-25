@@ -110,18 +110,51 @@ PRESETS = {
 }
 
 
+# Sample-based examples: bundled CC0 samples altered with the FX chain.
+# Paths are relative to the repo root (resolved in main()).
+SAMPLE_PRESETS = {
+    "sample_boom_deep": {"mode": "sample",
+        "sample_path": "samples/booms-and-bass/boom-hit-soft.wav",
+        "sample_pitch": -7.0, "duration": 1.5,
+        "amp_attack": 0.001, "amp_decay": 0.5, "amp_release": 0.7,
+        "distortion": 0.15, "reverb_mix": 0.35, "reverb_decay": 2.0},
+    "sample_whoosh_reversed": {"mode": "sample",
+        "sample_path": "samples/whooshes/whoosh-medium-hard.wav",
+        "sample_reverse": True, "sample_pitch": 3.0, "duration": 0.8,
+        "amp_attack": 0.02, "amp_decay": 0.2, "amp_release": 0.3,
+        "filter_type": FILTER_BANDPASS, "filter_freq": 1200.0,
+        "filter_q": 2.0, "reverb_mix": 0.3},
+    "sample_impact_pitched": {"mode": "sample",
+        "sample_path": "samples/impacts/impact-deep-hard.wav",
+        "sample_pitch": -5.0, "duration": 1.2,
+        "amp_attack": 0.001, "amp_decay": 0.4, "amp_release": 0.6,
+        "distortion": 0.3, "sub_amount": 0.4},
+    "sample_riser_looped": {"mode": "sample",
+        "sample_path": "samples/risers-and-fallers/riser-1s-soft.wav",
+        "sample_loop": True, "duration": 4.0,
+        "amp_attack": 0.5, "amp_decay": 0.8, "amp_sustain": 0.6,
+        "amp_release": 1.0, "reverb_mix": 0.5, "chorus": 0.3},
+}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default="examples", help="Output directory")
     args = ap.parse_args()
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
-    for name, params in PRESETS.items():
+    repo_root = Path(__file__).resolve().parent.parent
+    all_presets = dict(PRESETS)
+    for name, params in SAMPLE_PRESETS.items():
+        p = dict(params)
+        p["sample_path"] = str(repo_root / params["sample_path"])
+        all_presets[name] = p
+    for name, params in all_presets.items():
         samples = generate_samples(params)
         path = out_dir / f"{name}.wav"
         write_wav(path, samples, stereo=True)
         print(f"wrote {path} ({len(samples) / 2 / 44100:.2f}s stereo)")
-    print(f"Done: {len(PRESETS)} examples -> {out_dir}")
+    print(f"Done: {len(all_presets)} examples -> {out_dir}")
 
 
 if __name__ == "__main__":

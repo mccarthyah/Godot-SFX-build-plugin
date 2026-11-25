@@ -3,7 +3,9 @@ extends Control
 ## SFX Generator editor dock: preset browser, live preview, parameter
 ## editing, randomization and WAV export.
 
-const MODES: Array = ["osc", "fm", "pluck", "noise", "additive", "granular", "formant", "hybrid"]
+const MODES: Array = [
+	"osc", "fm", "pluck", "noise", "additive", "granular", "formant", "hybrid", "sample"
+]
 const WAVE_NAMES: Array = ["Sine", "Saw", "Square", "Triangle", "Pulse", "Noise"]
 const NOISE_NAMES: Array = ["White", "Pink", "Brown"]
 const FILTER_NAMES: Array = ["None", "Lowpass", "Highpass", "Bandpass", "Notch"]
@@ -25,6 +27,10 @@ var _path_edit: LineEdit = null
 var _status_label: Label = null
 var _preset_names: Array = []
 var _current_preset: String = ""
+var _sample_option: OptionButton = null
+var _sample_paths: Array = []
+var _loop_check: CheckBox = null
+var _reverse_check: CheckBox = null
 
 
 func _ready() -> void:
@@ -61,7 +67,7 @@ func _build_ui() -> void:
 	root.add_child(title)
 
 	var sub := Label.new()
-	sub.text = "Procedural SFX — FM, pluck, granular, formant & more. No samples needed."
+	sub.text = "Procedural synthesis plus CC0 samples — shape either with the full effects chain."
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	root.add_child(sub)
 
@@ -156,6 +162,23 @@ func _build_ui() -> void:
 	_add_slider(root, "Formant 1 (Hz)", "formant1", 200.0, 1500.0, 10.0)
 	_add_slider(root, "Formant 2 (Hz)", "formant2", 500.0, 3000.0, 10.0)
 	_add_slider(root, "Formant 3 (Hz)", "formant3", 1000.0, 5000.0, 10.0)
+
+	root.add_child(HSeparator.new())
+	root.add_child(_section_label("Sample (mode: sample)"))
+	_sample_option = OptionButton.new()
+	_sample_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sample_option.item_selected.connect(_on_sample_selected)
+	root.add_child(_sample_option)
+	_add_slider(root, "Sample pitch (st)", "sample_pitch", -24.0, 24.0, 0.5)
+	_loop_check = CheckBox.new()
+	_loop_check.text = "Loop sample to fill duration"
+	_loop_check.toggled.connect(_on_loop_toggled)
+	root.add_child(_loop_check)
+	_reverse_check = CheckBox.new()
+	_reverse_check.text = "Reverse sample"
+	_reverse_check.toggled.connect(_on_reverse_toggled)
+	root.add_child(_reverse_check)
+	_scan_samples()
 
 	root.add_child(HSeparator.new())
 	root.add_child(_section_label("Envelope (ADSR)"))
@@ -283,6 +306,11 @@ func _refresh_ui() -> void:
 	_set_option(_filter_option, int(_params.get("filter_type", 1)))
 	_set_option(_distort_option, int(_params.get("distortion_type", 0)))
 	_seed_spin.set_value_no_signal(float(_params.get("seed", 12345)))
+	var sidx: int = _sample_paths.find(String(_params.get("sample_path", "")))
+	if sidx >= 0:
+		_sample_option.select(sidx)
+	_loop_check.set_pressed_no_signal(bool(_params.get("sample_loop", false)))
+	_reverse_check.set_pressed_no_signal(bool(_params.get("sample_reverse", false)))
 
 
 func _set_option(opt: OptionButton, idx: int) -> void:
@@ -306,6 +334,10 @@ func _on_slider_changed(value: float, key: String) -> void:
 func _on_option_selected(index: int, key: String) -> void:
 	if key == "mode":
 		_params["mode"] = MODES[index]
+		if MODES[index] == "sample":
+			if String(_params.get("sample_path", "")) == "" and not _sample_paths.is_empty():
+				_params["sample_path"] = String(_sample_paths[0])
+				_sample_option.select(0)
 	else:
 		_params[key] = index
 	_current_preset = ""
@@ -314,6 +346,54 @@ func _on_option_selected(index: int, key: String) -> void:
 
 func _on_seed_changed(value: float) -> void:
 	_params["seed"] = int(value)
+
+
+func _scan_samples() -> void:
+	_sample_option.clear()
+	_sample_paths.clear()
+	_collect_wavs("res://samples")
+	_sample_paths.sort()
+	if _sample_paths.is_empty():
+		_sample_option.add_item("(no samples in res://samples/)")
+	else:
+		for p in _sample_paths:
+			_sample_option.add_item(String(p).replace("res://samples/", ""))
+
+
+func _collect_wavs(dir_path: String) -> void:
+	var dir := DirAccess.open(dir_path)
+	if dir == null:
+		return
+	dir.list_dir_begin()
+	var fname: String = dir.get_next()
+	while fname != "":
+		if fname != "." and fname != "..":
+			var full: String = dir_path + "/" + fname
+			if dir.current_is_dir():
+				_collect_wavs(full)
+			elif fname.ends_with(".wav"):
+				_sample_paths.append(full)
+		fname = dir.get_next()
+	dir.list_dir_end()
+
+
+func _on_sample_selected(index: int) -> void:
+	if index >= 0 and index < _sample_paths.size():
+		_params["sample_path"] = String(_sample_paths[index])
+		_params["mode"] = "sample"
+		_set_option(_mode_option, MODES.find("sample"))
+		_current_preset = ""
+		_status_label.text = "Sample: %s" % String(_sample_paths[index]).replace("res://samples/", "")
+
+
+func _on_loop_toggled(pressed: bool) -> void:
+	_params["sample_loop"] = pressed
+	_current_preset = ""
+
+
+func _on_reverse_toggled(pressed: bool) -> void:
+	_params["sample_reverse"] = pressed
+	_current_preset = ""
 
 
 ## ---------------------------------------------------------------------------

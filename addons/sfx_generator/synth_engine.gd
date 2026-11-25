@@ -46,7 +46,7 @@ const FILTER_NOTCH: int = 4
 
 static func default_params() -> Dictionary:
 	var p: Dictionary = {}
-	p["mode"] = "osc" # osc | fm | pluck | noise | additive | granular | formant | hybrid
+	p["mode"] = "osc" # osc | fm | pluck | noise | additive | granular | formant | hybrid | sample
 	p["seed"] = 12345
 	p["duration"] = 1.0 # seconds
 	p["sample_rate"] = SAMPLE_RATE
@@ -97,6 +97,11 @@ static func default_params() -> Dictionary:
 	p["formant3"] = 2440.0
 	p["formant_bw"] = 80.0
 	p["formant_mix"] = 1.0
+	# Sample (mode "sample": load a WAV and alter it with the FX chain)
+	p["sample_path"] = "" # res:// path to a .wav file
+	p["sample_pitch"] = 0.0 # semitones (-24..+24, resampled)
+	p["sample_loop"] = false # tile the sample to fill duration
+	p["sample_reverse"] = false # play backwards
 	# Filter
 	p["filter_type"] = FILTER_LOWPASS
 	p["filter_freq"] = 8000.0
@@ -175,6 +180,8 @@ static func generate_samples(params: Dictionary) -> PackedFloat32Array:
 			_render_formant(mono, p, sr, rng)
 		"hybrid":
 			_render_hybrid(mono, p, sr, rng)
+		"sample":
+			_render_sample(mono, p, sr, rng)
 		_:
 			_render_osc(mono, p, sr, rng)
 
@@ -805,6 +812,81 @@ static func _render_hybrid(buf: PackedFloat32Array, p: Dictionary, sr: int, rng:
 		s += sub_amt * sin(TAU_F * fposmod(sub_phase, 1.0))
 		s += noise_amt * brown * 3.0
 		buf[n] = s * 0.7
+
+
+## Load a WAV file as mono float samples. Returns {"samples", "rate"} or
+## an empty dictionary if the file cannot be loaded.
+static func _load_sample_mono(path: String) -> Dictionary:
+	if path == "":
+		return {}
+	var stream: AudioStreamWAV = load(path) as AudioStreamWAV
+	if stream == null or stream.data.is_empty():
+		return {}
+	var channels: int = 2 if stream.stereo else 1
+	var bytes_per_sample: int
+	if stream.format == AudioStreamWAV.FORMAT_16_BITS:
+		bytes_per_sample = 2
+	elif stream.format == AudioStreamWAV.FORMAT_8_BITS:
+		bytes_per_sample = 1
+	else:
+		return {} # ADPCM / QOA are not directly supported by the sample renderer.
+	var frames: int = int(stream.data.size() / (bytes_per_sample * channels))
+	if frames <= 0:
+		return {}
+	var out := PackedFloat32Array()
+	out.resize(frames)
+	if stream.format == AudioStreamWAV.FORMAT_16_BITS:
+		for i in frames:
+			var acc: float = 0.0
+			for ch in channels:
+				var idx: int = (i * channels + ch) * 2
+				var lo: int = stream.data[idx]
+				var hi: int = stream.data[idx + 1]
+				var s: int = lo | (hi << 8)
+				if s >= 32768:
+					s -= 65536
+				acc += float(s) / 32768.0
+			out[i] = acc / float(channels)
+	elif stream.format == AudioStreamWAV.FORMAT_8_BITS:
+		for i in frames:
+			var acc: float = 0.0
+			for ch in channels:
+				acc += (float(stream.data[i * channels + ch]) - 128.0) / 128.0
+			out[i] = acc / float(channels)
+	return {"samples": out, "rate": stream.mix_rate}
+
+
+static func _render_sample(buf: PackedFloat32Array, p: Dictionary, sr: int, _rng: RandomNumberGenerator) -> void:
+	var loaded: Dictionary = _load_sample_mono(String(_p(p, "sample_path", "")))
+	if loaded.is_empty():
+		return # silence (missing sample)
+	var src: PackedFloat32Array = loaded["samples"]
+	var src_rate: int = int(loaded["rate"])
+	var pitch: float = clampf(float(_p(p, "sample_pitch", 0.0)), -36.0, 36.0)
+	var loop: bool = bool(_p(p, "sample_loop", false))
+	var reverse: bool = bool(_p(p, "sample_reverse", false))
+	if src.is_empty() or src_rate <= 0:
+		return
+	if reverse:
+		var rev := PackedFloat32Array()
+		rev.resize(src.size())
+		for i in src.size():
+			rev[i] = src[src.size() - 1 - i]
+		src = rev
+	# Input index advance per output sample (pitch + rate conversion).
+	var rate: float = pow(2.0, pitch / 12.0) * float(src_rate) / float(sr)
+	for n in buf.size():
+		var pos: float = float(n) * rate
+		var idx: int = int(floor(pos))
+		if loop:
+			idx = idx % src.size()
+		elif idx >= src.size():
+			buf[n] = 0.0
+			continue
+		var frac: float = pos - float(idx)
+		var a: float = src[idx]
+		var b: float = src[(idx + 1) % src.size()] if loop else (src[idx + 1] if idx + 1 < src.size() else a)
+		buf[n] = lerpf(a, b, frac)
 
 
 ## ---------------------------------------------------------------------------

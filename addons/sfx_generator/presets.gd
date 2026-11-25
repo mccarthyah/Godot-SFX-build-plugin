@@ -259,6 +259,44 @@ static func get_presets() -> Array:
 		"amp_release": 0.2, "filter_type": SFXSynthEngine.FILTER_BANDPASS,
 		"filter_freq": 1200.0, "filter_q": 1.0,
 	}))
+	# --- Sample-based presets (require the bundled samples/ folder) ---
+	list.append(_mk("Sample Boom (deep)", "impact", {
+		"mode": "sample", "sample_path": "res://samples/booms-and-bass/boom-hit-soft.wav",
+		"sample_pitch": -7.0, "duration": 1.5,
+		"amp_attack": 0.001, "amp_decay": 0.5, "amp_release": 0.7,
+		"distortion": 0.15, "reverb_mix": 0.35, "reverb_decay": 2.0,
+	}))
+	list.append(_mk("Sample Whoosh (reversed)", "sci-fi", {
+		"mode": "sample", "sample_path": "res://samples/whooshes/whoosh-medium-hard.wav",
+		"sample_reverse": true, "sample_pitch": 3.0, "duration": 0.8,
+		"amp_attack": 0.02, "amp_decay": 0.2, "amp_release": 0.3,
+		"filter_type": SFXSynthEngine.FILTER_BANDPASS, "filter_freq": 1200.0,
+		"filter_q": 2.0, "reverb_mix": 0.3,
+	}))
+	list.append(_mk("Sample Impact (pitched)", "impact", {
+		"mode": "sample", "sample_path": "res://samples/impacts/impact-deep-hard.wav",
+		"sample_pitch": -5.0, "duration": 1.2,
+		"amp_attack": 0.001, "amp_decay": 0.4, "amp_release": 0.6,
+		"distortion": 0.3, "sub_amount": 0.4,
+	}))
+	list.append(_mk("Sample Riser (looped)", "magic", {
+		"mode": "sample", "sample_path": "res://samples/risers-and-fallers/riser-1s-soft.wav",
+		"sample_loop": true, "sample_pitch": 0.0, "duration": 4.0,
+		"amp_attack": 0.5, "amp_decay": 0.8, "amp_sustain": 0.6,
+		"amp_release": 1.0, "reverb_mix": 0.5, "chorus": 0.3,
+	}))
+	list.append(_mk("Sample Spring (bouncy)", "musical", {
+		"mode": "sample", "sample_path": "res://samples/bounce-spin-zoom/move-spring.wav",
+		"sample_pitch": 5.0, "duration": 0.9,
+		"amp_attack": 0.002, "amp_decay": 0.2, "amp_release": 0.4,
+		"delay_mix": 0.25, "delay_time": 0.15, "reverb_mix": 0.2,
+	}))
+	list.append(_mk("Sample Shimmer (stretched)", "magic", {
+		"mode": "sample", "sample_path": "res://samples/shimmers/shimmer-short-sparkle.wav",
+		"sample_pitch": -12.0, "duration": 2.0,
+		"amp_attack": 0.05, "amp_decay": 0.6, "amp_release": 0.9,
+		"reverb_mix": 0.6, "reverb_decay": 4.0, "chorus": 0.4,
+	}))
 	return list
 
 

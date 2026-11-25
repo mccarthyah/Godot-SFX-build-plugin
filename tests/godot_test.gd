@@ -8,10 +8,14 @@ func _init() -> void:
 	var failures: int = 0
 
 	# 1. Engine: all modes produce expected sample counts.
-	var modes: Array = ["osc", "fm", "pluck", "noise", "additive", "granular", "formant", "hybrid"]
+	var modes: Array = [
+		"osc", "fm", "pluck", "noise", "additive", "granular", "formant", "hybrid", "sample"
+	]
 	for mode in modes:
 		var p: Dictionary = SFXSynthEngine.default_params()
 		p["mode"] = mode
+		if mode == "sample":
+			p["sample_path"] = "res://samples/booms-and-bass/boom-hit-soft.wav"
 		p["duration"] = 0.3
 		p["stereo"] = false
 		var samples: PackedFloat32Array = SFXSynthEngine.generate_samples(p)
@@ -74,7 +78,36 @@ func _init() -> void:
 	else:
 		print("OK determinism")
 
-	# 6. Dock + player scripts load.
+	# 6. Sample mode (bundled CC0 samples altered with FX).
+	var sp: Dictionary = SFXSynthEngine.default_params()
+	sp["mode"] = "sample"
+	sp["sample_path"] = "res://samples/booms-and-bass/boom-hit-soft.wav"
+	sp["duration"] = 1.0
+	sp["stereo"] = false
+	var ssamples: PackedFloat32Array = SFXSynthEngine.generate_samples(sp)
+	if ssamples.size() != int(1.0 * 44100):
+		failures += 1
+		print("FAIL sample size ", ssamples.size())
+	else:
+		var peak: float = 0.0
+		for v in ssamples:
+			peak = maxf(peak, absf(v))
+		if peak < 0.05:
+			failures += 1
+			print("FAIL sample silent peak=", peak)
+		else:
+			print("OK sample mode peak=", peak)
+	# Missing sample renders silence without crashing.
+	var ms: PackedFloat32Array = SFXSynthEngine.generate_samples({
+		"mode": "sample", "sample_path": "res://nope.wav", "duration": 0.2, "stereo": false
+	})
+	if ms.size() != int(0.2 * 44100):
+		failures += 1
+		print("FAIL sample-missing size ", ms.size())
+	else:
+		print("OK sample-missing handled")
+
+	# 7. Dock + player scripts load.
 	var dock_script: GDScript = load("res://addons/sfx_generator/sfx_dock.gd")
 	if dock_script == null:
 		failures += 1
