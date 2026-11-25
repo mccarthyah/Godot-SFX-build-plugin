@@ -186,13 +186,14 @@ func _build_ui() -> void:
 	root.add_child(sample_filter_row)
 	_sample_source_option = OptionButton.new()
 	_sample_source_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_sample_source_option.add_item("All libraries", 0)
-	_sample_source_option.add_item("Wyzowl SFX Kit", 1)
-	_sample_source_option.add_item("Adbertiser SFX", 2)
-	_sample_source_option.add_item("Chip Sounds", 3)
-	_sample_source_option.add_item("Meta Nylon Guitar", 4)
-	_sample_source_option.add_item("Meta Piano", 5)
-	_sample_source_option.add_item("Meta Steel Guitar", 6)
+	_sample_source_option.add_item("Choose library / search all", 0)
+	_sample_source_option.add_item("Wyzowl SFX Kit (320)", 1)
+	_sample_source_option.add_item("Adbertiser SFX (408)", 2)
+	_sample_source_option.add_item("Chip Sounds (148)", 3)
+	_sample_source_option.add_item("Meta Nylon Guitar (348)", 4)
+	_sample_source_option.add_item("Meta Piano (352)", 5)
+	_sample_source_option.add_item("Meta Steel Guitar (375)", 6)
+	_sample_source_option.select(0)
 	_sample_source_option.item_selected.connect(_on_sample_source_selected)
 	sample_filter_row.add_child(_sample_source_option)
 	_sample_sort_option = OptionButton.new()
@@ -417,6 +418,10 @@ func _refresh_sample_options() -> void:
 	var search: String = _sample_search.text.strip_edges().to_lower()
 	var source_id: int = _sample_source_option.get_selected_id()
 	_visible_sample_paths.clear()
+	_sample_option.clear()
+	if source_id == 0 and search.is_empty():
+		_sample_option.add_item("(choose a library or search all)")
+		return
 	for sample_path in _sample_paths:
 		var path: String = String(sample_path)
 		var relative_path: String = path.replace("res://samples/", "")

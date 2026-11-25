@@ -26,7 +26,12 @@ func _init() -> void:
 		failures += 1
 		print("FAIL dock sample count: ", dock._sample_paths.size())
 	else:
-		print("OK dock found all 1951 bundled samples")
+		print("OK dock indexed all 1951 bundled samples")
+		if not dock._visible_sample_paths.is_empty() or dock._sample_option.item_count != 1:
+			failures += 1
+			print("FAIL sample picker loaded the full list before a filter")
+		else:
+			print("OK sample picker starts empty until a library or search is chosen")
 		var has_adbertiser := false
 		var has_chip := false
 		var has_meta_ogg := false
@@ -54,10 +59,19 @@ func _init() -> void:
 			print("FAIL sample search count: ", dock._visible_sample_paths.size())
 		else:
 			print("OK sample search narrows results by name or folder")
-		dock._sample_search.text = ""
-		dock._on_sample_search_changed("")
 		dock._sample_source_option.select(0)
 		dock._on_sample_source_selected(0)
+		dock._sample_search.text = "alarm_beep_1"
+		dock._on_sample_search_changed("alarm_beep_1")
+		if dock._visible_sample_paths.size() != 1:
+			failures += 1
+			print("FAIL global search-only results: ", dock._visible_sample_paths.size())
+		else:
+			print("OK search works across libraries without loading all choices")
+		dock._sample_search.text = ""
+		dock._on_sample_search_changed("")
+		dock._sample_source_option.select(2)
+		dock._on_sample_source_selected(2)
 		dock._sample_sort_option.select(1)
 		dock._on_sample_sort_selected(1)
 		var first_name: String = String(dock._visible_sample_paths[0]).get_file().to_lower()
