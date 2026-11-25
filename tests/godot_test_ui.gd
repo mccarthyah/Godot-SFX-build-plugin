@@ -22,11 +22,11 @@ func _init() -> void:
 		print("FAIL dock params empty")
 	else:
 		print("OK dock params mode=", dock._params["mode"])
-	if dock._sample_paths.size() != 76:
+	if dock._sample_paths.size() != 320:
 		failures += 1
 		print("FAIL dock sample count: ", dock._sample_paths.size())
 	else:
-		print("OK dock found 76 bundled samples")
+		print("OK dock found all 320 bundled samples")
 		dock._on_sample_selected(0)
 		if dock._params.get("mode") != "sample" or String(dock._params.get("sample_path", "")) == "":
 			failures += 1
