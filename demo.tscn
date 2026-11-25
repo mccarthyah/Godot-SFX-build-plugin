@@ -4,3 +4,10 @@
 
 [node name="Demo" type="Node"]
 script = ExtResource("1_demo")
+
+[node name="Label" type="Label" parent="."]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 900.0
+offset_bottom = 200.0
+text = "SFX Generator Demo\nPlaying procedurally generated sounds...\n\nFor the full interface, stop the game and open View > SFX Generator in the editor."
