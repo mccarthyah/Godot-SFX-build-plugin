@@ -1,0 +1,18 @@
+# Godot
+.godot/
+*.import
+*.translation
+*.godot.tmp
+godot_test_output/
+google_drive/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/
+*.swp
